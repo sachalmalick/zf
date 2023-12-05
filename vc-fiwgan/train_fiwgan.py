@@ -50,8 +50,8 @@ def train(fps, args):
         prefetch_gpu_num=args.data_prefetch_gpu_num)[:, :, 0]
 
   # Make z vector
-  print('Number of devices:, mirrored strategy {}'.format(strategy.num_replicas_in_sync))
   strategy = tf.distribute.MirroredStrategy()
+  print('Number of devices:, mirrored strategy {}'.format(strategy.num_replicas_in_sync))
   with strategy.scope():
     categ = tf.keras.backend.random_binomial([args.train_batch_size,args.num_categ],0.5)
     uniform = tf.random.uniform([args.train_batch_size,args.wavegan_latent_dim-args.num_categ],-1.,1.)
