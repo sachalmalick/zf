@@ -15,6 +15,7 @@ from six.moves import xrange
 import loader
 from cinfowavegan import WaveGANGenerator, WaveGANDiscriminator, WaveGANQ
 
+#tf.compat.v1.disable_v2_behavior() 
 
 """
   Trains a WaveGAN

@@ -22,7 +22,7 @@ from six.moves import xrange
 import loader
 from cinfowavegan import WaveGANGenerator, WaveGANDiscriminator, WaveGANQ
 
-tf.compat.v1.disable_v2_behavior() 
+#tf.compat.v1.disable_v2_behavior() 
 
 """
   Trains a WaveGAN
@@ -699,7 +699,7 @@ if __name__ == '__main__':
     if len(fps) == 0:
       raise Exception('Did not find any audio files in specified directory')
     print('Found {} audio files in specified directory'.format(len(fps)))
-    strategy = tf.compat.v1.distribute.MirroredStrategy()
+    strategy = tf.distribute.MirroredStrategy()
     print('Number of devices:, mirrored strategy {}'.format(strategy.num_replicas_in_sync))
     infer(args)
     with strategy.scope():

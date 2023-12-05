@@ -1,5 +1,5 @@
 import tensorflow as tf
-tf.compat.v1.disable_v2_behavior() 
+#tf.compat.v1.disable_v2_behavior() 
 
 
 def conv1d_transpose(
@@ -35,6 +35,9 @@ def conv1d_transpose(
         padding='same')
   else:
     raise NotImplementedError
+  
+
+
 
 
 """
