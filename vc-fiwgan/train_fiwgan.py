@@ -701,8 +701,8 @@ if __name__ == '__main__':
     print('Found {} audio files in specified directory'.format(len(fps)))
     strategy = tf.distribute.MirroredStrategy()
     print('Number of devices:, mirrored strategy {}'.format(strategy.num_replicas_in_sync))
+    infer(args)
     with strategy.scope():
-      infer(args)
       train(fps, args)
   elif args.mode == 'preview':
     preview(args)
