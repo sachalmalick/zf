@@ -1,0 +1,4 @@
+'''
+Generator (Counterfeiter)
+Descriminator (Cop)
+'''

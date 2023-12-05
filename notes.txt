@@ -1,0 +1,47 @@
+Spectrographs - visual representation, frequency vs time.
+
+Fourier transformation - transforms data to 
+
+We need to decide the best way to represent the audio: raw, Spectrographs, etc? - We should estimate the performance of different methods.
+
+We are going to start with two types of classification: identifying whether it is a zebra finch call from other animals, from other finches
+and then what type of call it is and who is speaking.
+
+For today lets do this order
+
+1. What call it is
+2. Who is speaking
+
+Measure accuracy for various different methods of audio data representation.
+
+Then we can talk about the future steps: Setting up the GAN, etc.
+
+Hyper parameter - sampling rate, audio file size (we will use the average, and pad to zero), time shift amount?
+
+Mel spectrogram? - or another spectrogram? Mel scale use of decibel is fine tuned to human perception, but not sure if thats going to work for birds.
+birds hear differently - 250 Hz and 12 kHz is the hearing range of zerba finches
+We hear from 20hz to 20khz
+
+okay lets get this going!!!!
+
+Hyperparameter optimization on CNN
+
+- 
+
+We need to do hyper parameter opitimization
+
+--- Julies Paper Notes --- 
+
+They used four different feature spaces 
+
+    1. Predefined Acoustical Features (PAF)
+        - quantities derived from the pressurized wave form that summarize spectral and temporal envelopes (windows) of the wave.
+    2. complete and invertible spectrographic representation
+        - invertible means there are know a priori assumptions about the data (why?)
+        - Results of Linear Descriminant Analysis and Logistic Regression can be desiplayed in spectrographic representation
+        - closley relates to neural response functions
+        - feature space they say is high dimensional and requires dimensionality reduction (they did not have CNNs)
+    3. modulation power spectrum
+        - joint temporal and spectral modulation amplitude spectrum, 2D Fourier Transformation on the spectrogram
+    4. Mel Frequency Cepstral Coefficients
+    
