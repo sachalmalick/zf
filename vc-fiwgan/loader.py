@@ -191,7 +191,7 @@ def decode_extract_and_batch(
     if prefetch_gpu_num is not None and prefetch_gpu_num >= 0:
       dataset = dataset.apply(
           tf.data.experimental.prefetch_to_device(
-            '/device:GPU:{}'.format(prefetch_gpu_num)))
+            '/device:GPU:{}'.format(prefetch_gpu_num), allow_soft_placement=True))
 
   # Get tensors
   iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
