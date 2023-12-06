@@ -138,10 +138,10 @@ def decode_extract_and_batch(
 
     return audio
 
-# Decode audio
-dataset = dataset.map(
-    _decode_audio_shaped,
-    num_parallel_calls=decode_parallel_calls)
+  # Decode audio
+  dataset = dataset.map(
+      _decode_audio_shaped,
+      num_parallel_calls=decode_parallel_calls)
 
   # Parallel
   def _slice(audio):
