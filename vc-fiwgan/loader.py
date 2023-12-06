@@ -130,8 +130,7 @@ def decode_extract_and_batch(
     audio = tf.py_function(
         _decode_audio_closure,
         [fp],
-        tf.float32,
-        stateful=False)
+        tf.float32)
     audio.set_shape([None, 1, decode_num_channels])
 
     return audio
