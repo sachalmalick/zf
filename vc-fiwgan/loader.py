@@ -2,7 +2,6 @@ from scipy.io.wavfile import read as wavread
 import numpy as np
 
 import tensorflow as tf
-tf.compat.v1.disable_v2_behavior() 
 
 import sys
 
@@ -193,7 +192,5 @@ def decode_extract_and_batch(
           tf.data.experimental.prefetch_to_device(
             '/device:GPU:{}'.format(prefetch_gpu_num)))
 
-  # Get tensors
-  iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
   
-  return iterator.get_next()
+  return dataset
