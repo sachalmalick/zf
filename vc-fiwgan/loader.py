@@ -121,23 +121,27 @@ def decode_extract_and_batch(
 
   def _decode_audio_shaped(fp):
     def _decode_audio_closure(_fp):
-      return decode_audio(
-          _fp,
-          fs=decode_fs,
-          num_channels=decode_num_channels,
-          normalize=decode_normalize,
-          fast_wav=decode_fast_wav)
+        # Convert the tensor _fp to a numpy array and then to a string
+        _fp = _fp.numpy().decode('utf-8')
+        return decode_audio(
+            _fp,
+            fs=decode_fs,
+            num_channels=decode_num_channels,
+            normalize=decode_normalize,
+            fast_wav=decode_fast_wav)
+
     audio = tf.py_function(
         _decode_audio_closure,
         [fp],
         tf.float32)
     audio.set_shape([None, 1, decode_num_channels])
+
     return audio
 
-  # Decode audio
-  dataset = dataset.map(
-      _decode_audio_shaped,
-      num_parallel_calls=decode_parallel_calls)
+# Decode audio
+dataset = dataset.map(
+    _decode_audio_shaped,
+    num_parallel_calls=decode_parallel_calls)
 
   # Parallel
   def _slice(audio):
