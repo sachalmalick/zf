@@ -111,8 +111,7 @@ def train(fps, args):
         @tf.function
         def train_step(real_waves, step):
             z = make_z()
-            with (tf.GradientTape() as gen_tape, tf.GradientTape() as dis_tape,
-                tf.GradientTape() as qnet_tape):
+            with tf.GradientTape() as gen_tape, tf.GradientTape() as dis_tape, tf.GradientTape() as qnet_tape:
                 generated_waves = generator(z, training=True)
                 real_output = discriminator(real_waves, training=True)
                 fake_output = discriminator(generated_waves, training=True)
