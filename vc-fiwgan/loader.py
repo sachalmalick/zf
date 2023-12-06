@@ -127,7 +127,7 @@ def decode_extract_and_batch(
       normalize=decode_normalize,
       fast_wav=decode_fast_wav)
 
-    audio = tf.compat.v1.py_func(
+    audio = tf.py_function(
         _decode_audio_closure,
         [fp],
         tf.float32,
