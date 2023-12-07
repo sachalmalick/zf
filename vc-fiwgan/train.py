@@ -68,7 +68,7 @@ def train(fps, args):
             learning_rate=1e-4)
         
         def discriminator_loss(real, fake):
-            return tf.reduce_mean(fake) - tf.reduce_mean(real)
+            return tf.reduce_mean(real) - tf.reduce_mean(fake)
 
         def generator_loss(fake):
             return -tf.reduce_mean(fake)
@@ -487,7 +487,7 @@ if __name__ == '__main__':
       help='If set, normalize the training examples')
   data_args.add_argument('--data_fast_wav', action='store_true', dest='data_fast_wav',
       help='If your data is comprised of standard WAV files (16-bit signed PCM or 32-bit float), use this flag to decode audio using scipy (faster) instead of librosa')
-  data_args.add_argument('--data_prefetch_gpu_num', type=int,
+  data_args.add_argument('--√', type=int,
       help='If nonnegative, prefetch examples to this GPU (Tensorflow device num)')
 
   wavegan_args = parser.add_argument_group('WaveGAN')
