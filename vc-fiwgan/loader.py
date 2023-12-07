@@ -178,10 +178,6 @@ def decode_extract(
 
   # Extract parallel sliceuences from both audio and features
   dataset = dataset.flat_map(_slice_dataset_wrapper)
-
-  # Shuffle examples
-  if shuffle:
-    dataset = dataset.shuffle(buffer_size=shuffle_buffer_size)
   
   return dataset
 
@@ -246,7 +242,7 @@ def decode_extract_and_batch(
                         shuffle_buffer_size,
                         prefetch_size,
                         prefetch_gpu_num)
-
+  dataset = dataset.batch(batch_size, drop_remainder=True)
   # Prefetch a number of batches
   if prefetch_size is not None:
     dataset = dataset.prefetch(prefetch_size)

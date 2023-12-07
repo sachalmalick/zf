@@ -17,6 +17,7 @@ import time
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 from six.moves import xrange
 
@@ -34,7 +35,7 @@ def train(fps, args):
     strategy = tf.distribute.MirroredStrategy()
     print('Number of devices:, mirrored strategy {}'.format(strategy.num_replicas_in_sync))
     with strategy.scope():            #loads input waveforns in filepaths
-        x = loader.decode_extract(
+        x = loader.decode_extract_and_batch(
             fps,
             batch_size=args.train_batch_size,
             slice_len=args.data_slice_len,
@@ -51,6 +52,7 @@ def train(fps, args):
             shuffle_buffer_size=4096,
             prefetch_size=args.train_batch_size * 4,
             prefetch_gpu_num=args.data_prefetch_gpu_num)
+        
 
         # Make z vector
         generator = Generator(**args.wavegan_g_kwargs)
@@ -78,13 +80,15 @@ def train(fps, args):
             return tf.reduce_mean(q_sigmoid)
 
         def make_z():
-            categ = tf.random.stateless_binomial(probs=0.5, dtype=tf.float32).sample(sample_shape=(args.train_batch_size, args.num_categ))
+            categ = categ = tfp.distributions.Bernoulli(probs=0.5, dtype=tf.float32).sample(sample_shape=(args.train_batch_size, args.num_categ))
             uniform = tf.random.uniform([args.train_batch_size,args.wavegan_latent_dim-args.num_categ],-1.,1.)
             return tf.concat([categ,uniform],1)
         
         example_z = make_z()
 
         def train_step(real_waves):
+            real_waves = real_waves[:, :, 0]
+            print("single batch shape", real_waves.shape)
             z = make_z()
             with tf.GradientTape() as gen_tape, tf.GradientTape() as dis_tape, tf.GradientTape() as qnet_tape:
                 generated_waves = generator(z, training=True)
@@ -96,15 +100,9 @@ def train(fps, args):
                 g_loss = generator_loss(fake_output)
                 q_loss = qnet_loss(z, z_guess)
 
-                #average the loss
-                d_loss = tf.nn.compute_average_loss(d_loss)
-                g_loss = tf.nn.compute_average_loss(g_loss)
-                q_loss = tf.nn.compute_average_loss(q_loss)
-
-
-                tf.summary.scalar('G_loss', g_loss)
-                tf.summary.scalar('D_loss', d_loss)
-                tf.summary.scalar('Q_loss', q_loss)
+                # tf.summary.scalar('G_loss', g_loss)
+                # tf.summary.scalar('D_loss', d_loss)
+                # tf.summary.scalar('Q_loss', q_loss)
 
             gen_grd = gen_tape.gradient(g_loss, generator.trainable_variables)
             dis_grd = dis_tape.gradient(d_loss, discriminator.trainable_variables)
@@ -136,17 +134,25 @@ def train(fps, args):
         
         NUM_EPOCHS = 50
         print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
+
         #distributed the dataset
         x = strategy.experimental_distribute_dataset(x)
+        writer = tf.summary.create_file_writer(args.train_dir)
         def train_loop():
             for epoch in range(0, NUM_EPOCHS):
                 print("Epoch", epoch)
+                step = 0
                 for dist_inputs in x:
                     loss = distributed_train_step(dist_inputs)
                     g_loss, d_loss, q_loss = loss
-                    tf.summary.scalar('Generator Loss', g_loss)
-                    tf.summary.scalar('Descriminator Loss', d_loss)
-                    tf.summary.scalar('QNet Loss', q_loss)
+                    print("step", step, "g loss ", g_loss.numpy(),
+                        "d loss ", d_loss.numpy(), "q loss ", q_loss.numpy())
+                    with writer.as_default():
+                        tf.summary.scalar('Generator Loss', g_loss, step=step)
+                        tf.summary.scalar('Descriminator Loss', d_loss, step=step)
+                        tf.summary.scalar('QNet Loss', q_loss, step=step)
+                        writer.flush()
+                    step+=1
         print('Training has started. Please use \'tensorboard --logdir={}\' to monitor.'.format(args.train_dir))
         train_loop()
 

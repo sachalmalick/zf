@@ -47,7 +47,6 @@ class Descriminator(tf.keras.Model):
 
         
     def call(self, x, training=True):
-        print(x.shape)
         batch_size = tf.shape(x)[0]
         
         if self.phaseshuffle_rad > 0:
