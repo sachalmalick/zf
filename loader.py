@@ -1,6 +1,5 @@
 import re
 import pathlib
-import pandas as pd
 import constants as const
 import librosa as libr
 import numpy as np
@@ -30,4 +29,8 @@ def to_example(path):
 def load_dataset():
     return ZFinchDataset(const.ADULT_RECORDINGS_PATH)
 
+def load_data_trf(dir):
+    paths = list(pathlib.Path(dir).iterdir())
+    ds = [libr.load(path)[0] for path in paths]
+    return np.array(ds)
 
