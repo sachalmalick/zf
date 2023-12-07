@@ -1,9 +1,16 @@
 from scipy.io.wavfile import read as wavread
 import numpy as np
 
+import librosa as libr
 import tensorflow as tf
-
+import pathlib
 import sys
+
+def load_data_trf(dir):
+    paths = list(pathlib.Path(dir).iterdir())
+    ds = [libr.load(path)[0] for path in paths]
+    x = np.array(ds)
+    return np.reshape(x, (x.shape[0], x.shape[1], 1))
 
 
 def decode_audio(fp, fs=None, num_channels=1, normalize=False, fast_wav=False):
@@ -123,6 +130,7 @@ def decode_extract(
     def _decode_audio_closure(_fp):
         # Convert the tensor _fp to a numpy array and then to a string
         _fp = _fp.numpy().decode('utf-8')
+        print("decoding audio")
         return decode_audio(
             _fp,
             fs=decode_fs,
@@ -242,5 +250,6 @@ def decode_extract_and_batch(
                         shuffle_buffer_size,
                         prefetch_size,
                         prefetch_gpu_num)
+  dataset = dataset.cache()
   dataset = dataset.batch(batch_size, drop_remainder=True)
   return dataset

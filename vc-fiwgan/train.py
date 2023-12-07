@@ -53,6 +53,9 @@ def train(fps, args):
             prefetch_size=args.train_batch_size * 4,
             prefetch_gpu_num=args.data_prefetch_gpu_num)
         
+        audio_data = loader.load_data_trf("../proc")
+        print(audio_data.shape)
+        
 
         # Make z vector
         generator = Generator(**args.wavegan_g_kwargs)
@@ -93,7 +96,7 @@ def train(fps, args):
         example_z = make_z()
 
         def train_step(real_waves):
-            real_waves = real_waves[:, :, 0]
+            #real_waves = real_waves[:, :, 0]
             print("single batch shape", real_waves.shape)
             z = make_z()
             with tf.GradientTape() as gen_tape, tf.GradientTape() as dis_tape, tf.GradientTape() as qnet_tape:
@@ -141,12 +144,15 @@ def train(fps, args):
         #distributed the dataset
         x = strategy.experimental_distribute_dataset(x)
         writer = tf.summary.create_file_writer(args.train_dir)
+        ds = tf.data.Dataset.from_tensor_slices((audio_data))
+        ds = ds.batch(args.train_batch_size, drop_remainder=True)
+
         def train_loop():
             for epoch in range(0, NUM_EPOCHS):
                 print("Epoch", epoch)
                 step = 0
-                for dist_inputs in x:
-                    loss = distributed_train_step(dist_inputs)
+                for batch in ds:
+                    loss = distributed_train_step(tf.convert_to_tensor(batch))
                     g_loss, d_loss, q_loss = loss
                     print("step", step, "g loss ", g_loss.numpy(),
                         "d loss ", d_loss.numpy(), "q loss ", q_loss.numpy())
