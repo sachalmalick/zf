@@ -17,6 +17,8 @@ import time
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
+
 from six.moves import xrange
 
 import loader
@@ -104,7 +106,7 @@ def train(fps, args):
             return tf.reduce_mean(q_sigmoid)
 
         def make_z():
-            categ = tf.keras.backend.random_binomial([args.train_batch_size,args.num_categ],0.5)
+            categ = tfp.distributions.Bernoulli(probs=0.7).sample(sample_shape=(args.num_categ))
             uniform = tf.random.uniform([args.train_batch_size,args.wavegan_latent_dim-args.num_categ],-1.,1.)
             return tf.concat([categ,uniform],1)
 
