@@ -125,10 +125,7 @@ def train(fps, args):
                                             normalize_loss(q_loss))
         
         # #check points
-        checkpoint = tf.train.Checkpoint(generator_optimizer=g_opt,
-                    discriminator_optimizer=d_opt,
-                    qnet_optimizer=q_opt,
-                    generator=generator,
+        checkpoint = tf.train.Checkpoint(generator=generator,
                     discriminator=discriminator,
                     qnet=qnet)
         
