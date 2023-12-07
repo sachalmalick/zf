@@ -106,7 +106,7 @@ def train(fps, args):
             return tf.reduce_mean(q_sigmoid)
 
         def make_z():
-            categ = tfp.distributions.Bernoulli(probs=0.7).sample(sample_shape=(args.num_categ))
+            categ = tfp.distributions.Bernoulli(probs=0.5, dtype=tf.float32).sample(sample_shape=(args.train_batch_size, args.num_categ))
             uniform = tf.random.uniform([args.train_batch_size,args.wavegan_latent_dim-args.num_categ],-1.,1.)
             return tf.concat([categ,uniform],1)
 
