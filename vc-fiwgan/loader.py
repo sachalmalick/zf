@@ -1,4 +1,3 @@
-from scipy.io.wavfile import read as wavread
 import numpy as np
 
 import librosa as libr
