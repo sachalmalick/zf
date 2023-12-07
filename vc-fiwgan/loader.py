@@ -65,7 +65,7 @@ def decode_audio(fp, fs=None, num_channels=1, normalize=False, fast_wav=False):
   return _wav
 
 
-def decode_extract_and_batch(
+def decode_extract(
     fps,
     batch_size,
     slice_len,
@@ -182,9 +182,70 @@ def decode_extract_and_batch(
   # Shuffle examples
   if shuffle:
     dataset = dataset.shuffle(buffer_size=shuffle_buffer_size)
+  
+  return dataset
 
-  # Make batches
-  dataset = dataset.batch(batch_size, drop_remainder=True)
+def decode_extract_and_batch(
+    fps,
+    batch_size,
+    slice_len,
+    decode_fs,
+    decode_num_channels,
+    decode_normalize=True,
+    decode_fast_wav=False,
+    decode_parallel_calls=1,
+    slice_randomize_offset=False,
+    slice_first_only=False,
+    slice_overlap_ratio=0,
+    slice_pad_end=False,
+    repeat=False,
+    shuffle=False,
+    shuffle_buffer_size=None,
+    prefetch_size=None,
+    prefetch_gpu_num=None):
+  """Decodes audio file paths into mini-batches of samples.
+
+  Args:
+    fps: List of audio file paths.
+    batch_size: Number of items in the batch.
+    slice_len: Length of the sliceuences in samples or feature timesteps.
+    decode_fs: (Re-)sample rate for decoded audio files.
+    decode_num_channels: Number of channels for decoded audio files.
+    decode_normalize: If false, do not normalize audio waveforms.
+    decode_fast_wav: If true, uses scipy to decode standard wav files.
+    decode_parallel_calls: Number of parallel decoding threads.
+    slice_randomize_offset: If true, randomize starting position for slice.
+    slice_first_only: If true, only use first slice from each audio file.
+    slice_overlap_ratio: Ratio of overlap between adjacent slices.
+    slice_pad_end: If true, allows zero-padded examples from the end of each audio file.
+    repeat: If true (for training), continuously iterate through the dataset.
+    shuffle: If true (for training), buffer and shuffle the sliceuences.
+    shuffle_buffer_size: Number of examples to queue up before grabbing a batch.
+    prefetch_size: Number of examples to prefetch from the queue.
+    prefetch_gpu_num: If specified, prefetch examples to GPU.
+
+  Returns:
+    A tuple of np.float32 tensors representing audio waveforms.
+      audio: [batch_size, slice_len, 1, nch]
+  """
+  # Create dataset of filepaths
+  dataset = decode_extract(fps,
+                        batch_size,
+                        slice_len,
+                        decode_fs,
+                        decode_num_channels,
+                        decode_normalize,
+                        decode_fast_wav,
+                        decode_parallel_calls,
+                        slice_randomize_offset,
+                        slice_first_only,
+                        slice_overlap_ratio,
+                        slice_pad_end,
+                        repeat,
+                        shuffle,
+                        shuffle_buffer_size,
+                        prefetch_size,
+                        prefetch_gpu_num)
 
   # Prefetch a number of batches
   if prefetch_size is not None:
@@ -193,6 +254,4 @@ def decode_extract_and_batch(
       dataset = dataset.apply(
           tf.data.experimental.prefetch_to_device(
             '/device:GPU:{}'.format(prefetch_gpu_num)))
-
-  
   return dataset

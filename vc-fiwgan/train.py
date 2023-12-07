@@ -17,7 +17,6 @@ import time
 
 import numpy as np
 import tensorflow as tf
-import tensorflow_probability as tfp
 
 from six.moves import xrange
 
@@ -35,7 +34,7 @@ def train(fps, args):
     strategy = tf.distribute.MirroredStrategy()
     print('Number of devices:, mirrored strategy {}'.format(strategy.num_replicas_in_sync))
     with strategy.scope():            #loads input waveforns in filepaths
-        x = loader.decode_extract_and_batch(
+        x = loader.decode_extract(
             fps,
             batch_size=args.train_batch_size,
             slice_len=args.data_slice_len,
@@ -58,33 +57,6 @@ def train(fps, args):
         discriminator = Descriminator(**args.wavegan_d_kwargs)
         qnet = QNet(**args.wavegan_q_kwargs)
 
-        # # Summarize
-        # tf.compat.v1.summary.audio('x', x, args.data_sample_rate)
-        # tf.compat.v1.summary.audio('G_z', G_z, args.data_sample_rate)
-        # G_z_rms = tf.sqrt(tf.reduce_mean(tf.square(G_z[:, :, 0]), axis=1))
-        # x_rms = tf.sqrt(tf.reduce_mean(tf.square(x[:, :, 0]), axis=1))
-        # tf.compat.v1.summary.histogram('x_rms_batch', x_rms)
-        # tf.compat.v1.summary.histogram('G_z_rms_batch', G_z_rms)
-        # tf.compat.v1.summary.scalar('x_rms', tf.reduce_mean(x_rms))
-        # tf.compat.v1.summary.scalar('G_z_rms', tf.reduce_mean(G_z_rms))
-
-        # # Print G summary
-        # print('-' * 80)
-        # print('Generator')
-        # print(generator.summary())
-
-        # # Print D summary
-        # print('-' * 80)
-        # print("Descriminator")
-        # print(discriminator.summary())
-
-
-        # # Make Q summary
-        # print('-' * 80)
-        # print("QNet")
-        # print(qnet.summary())
-
-
         #wgan-gp loss
         g_opt = tf.keras.optimizers.Adam(
                 learning_rate=1e-4)
@@ -106,12 +78,13 @@ def train(fps, args):
             return tf.reduce_mean(q_sigmoid)
 
         def make_z():
-            categ = tfp.distributions.Bernoulli(probs=0.5, dtype=tf.float32).sample(sample_shape=(args.train_batch_size, args.num_categ))
+            categ = tf.random.stateless_binomial(probs=0.5, dtype=tf.float32).sample(sample_shape=(args.train_batch_size, args.num_categ))
             uniform = tf.random.uniform([args.train_batch_size,args.wavegan_latent_dim-args.num_categ],-1.,1.)
             return tf.concat([categ,uniform],1)
+        
+        example_z = make_z()
 
-        @tf.function
-        def train_step(real_waves, step):
+        def train_step(real_waves):
             z = make_z()
             with tf.GradientTape() as gen_tape, tf.GradientTape() as dis_tape, tf.GradientTape() as qnet_tape:
                 generated_waves = generator(z, training=True)
@@ -122,6 +95,12 @@ def train(fps, args):
                 d_loss = discriminator_loss(real_output, fake_output)
                 g_loss = generator_loss(fake_output)
                 q_loss = qnet_loss(z, z_guess)
+
+                #average the loss
+                d_loss = tf.nn.compute_average_loss(d_loss)
+                g_loss = tf.nn.compute_average_loss(g_loss)
+                q_loss = tf.nn.compute_average_loss(q_loss)
+
 
                 tf.summary.scalar('G_loss', g_loss)
                 tf.summary.scalar('D_loss', d_loss)
@@ -135,31 +114,39 @@ def train(fps, args):
             d_opt.apply_gradients(zip(dis_grd, discriminator.trainable_variables))
             q_opt.apply_gradients(zip(qnet_grd, qnet.trainable_variables))
 
-            print(step, g_loss, d_loss, q_loss)
-            return g_loss, d_loss, q_loss
+            return (g_loss, d_loss, q_loss)
+        
+        @tf.function
+        def distributed_train_step(dist_inputs):
+            per_replica_losses = strategy.run(train_step, args=(dist_inputs,))
+            g_loss, d_loss, q_loss = per_replica_losses
+            def normalize_loss(loss):
+                return strategy.reduce(tf.distribute.ReduceOp.SUM, loss,
+                         axis=None)
+            return (normalize_loss(g_loss), normalize_loss(d_loss),
+                                            normalize_loss(q_loss))
         
         # #check points
-        # checkpoint = tf.train.Checkpoint(generator_optimizer=g_opt,
-        #             discriminator_optimizer=d_opt,
-        #             qnet_optimizer=q_opt,
-        #             generator=generator,
-        #             discriminator=discriminator,
-        #             qnet=qnet)
+        checkpoint = tf.train.Checkpoint(generator_optimizer=g_opt,
+                    discriminator_optimizer=d_opt,
+                    qnet_optimizer=q_opt,
+                    generator=generator,
+                    discriminator=discriminator,
+                    qnet=qnet)
         
         NUM_EPOCHS = 50
-        
+        print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
+        #distributed the dataset
+        x = strategy.experimental_distribute_dataset(x)
         def train_loop():
-            step = 0
             for epoch in range(0, NUM_EPOCHS):
-                for batch in x:
-                    print(batch.shape)
-                    input = batch[:, :, 0]
-                    print(input.shape)
-                    strategy.run(train_step, args=(input, step))
-                    #g_loss, d_loss, q_loss = train_step(input, step)
-                    step+=1
-            # Run training
-            # print('-' * 80)
+                print("Epoch", epoch)
+                for dist_inputs in x:
+                    loss = distributed_train_step(dist_inputs)
+                    g_loss, d_loss, q_loss = loss
+                    tf.summary.scalar('Generator Loss', g_loss)
+                    tf.summary.scalar('Descriminator Loss', d_loss)
+                    tf.summary.scalar('QNet Loss', q_loss)
         print('Training has started. Please use \'tensorboard --logdir={}\' to monitor.'.format(args.train_dir))
         train_loop()
 
