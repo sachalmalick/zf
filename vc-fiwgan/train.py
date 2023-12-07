@@ -59,6 +59,9 @@ def train(fps, args):
         discriminator = Descriminator(**args.wavegan_d_kwargs)
         qnet = QNet(**args.wavegan_q_kwargs)
 
+        cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True,
+                                              reduction=tf.keras.losses.Reduction.NONE)
+
         #wgan-gp loss
         g_opt = tf.optimizers.Adam(
                 learning_rate=1e-4)
@@ -68,10 +71,13 @@ def train(fps, args):
             learning_rate=1e-4)
         
         def discriminator_loss(real, fake):
-            return tf.reduce_mean(real) - tf.reduce_mean(fake)
+            real_loss = cross_entropy(tf.ones_like(real), real)
+            fake_loss = cross_entropy(tf.zeros_like(fake), fake)
+            total_loss = real_loss + fake_loss
+            return tf.reduce_mean(total_loss)
 
         def generator_loss(fake):
-            return -tf.reduce_mean(fake)
+            return tf.reduce_mean(cross_entropy(tf.ones_like(fake), fake))
 
         def qnet_loss(z, guessed_z):
             z_q_loss = z[:, : args.num_categ]
