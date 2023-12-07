@@ -138,13 +138,13 @@ def train(fps, args):
             print(step, g_loss, d_loss, q_loss)
             return g_loss, d_loss, q_loss
         
-        #check points
-        checkpoint = tf.train.Checkpoint(generator_optimizer=g_opt,
-                    discriminator_optimizer=d_opt,
-                    qnet_optimizer=q_opt,
-                    generator=generator,
-                    discriminator=discriminator,
-                    qnet=qnet)
+        # #check points
+        # checkpoint = tf.train.Checkpoint(generator_optimizer=g_opt,
+        #             discriminator_optimizer=d_opt,
+        #             qnet_optimizer=q_opt,
+        #             generator=generator,
+        #             discriminator=discriminator,
+        #             qnet=qnet)
         
         NUM_EPOCHS = 50
         
