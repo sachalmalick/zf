@@ -1,4 +1,4 @@
-ADULT_RECORDINGS_PATH = "data/adult_vocalizations/"
+ADULT_RECORDINGS_PATH = "data/data/"
 FILE_NAME_PATTERN = "(.*)_(.*)[-_](.*)-(.*)\.wav"
 SAMPLING_RATE = 22050
 SAMPLE_LENGTH_MS = 300

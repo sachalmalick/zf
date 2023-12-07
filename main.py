@@ -14,6 +14,9 @@ if __name__ == "__main__":
 
     print("Normalizing audio data")
     preprocess.noramlize_audio_data()
+    preprocess.write_recorings("proc")
+
+    load_data_trf("proc")
 
     print("Training CNN!")
     cnn.train_and_evaluate(preprocess)

@@ -5,6 +5,9 @@ import constants as const
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, Dataset, random_split
 import util
+from scipy.io import wavfile
+import tensorflow as tf
+
 
 class ZFinchDataProcessor:
     def __init__(self, dataset: ZFinchDataset):
@@ -16,10 +19,16 @@ class ZFinchDataProcessor:
     def noramlize_audio_data(self):
         self.normalized_waves = np.array([normalize_sample_length(i[0]) for i in self.audio_data])
         return self.normalized_waves
+    def write_recorings(self, folder):
+        x = np.array(self.normalized_waves)
+        print(x.shape)
+        for i in range(0, len(self.normalized_waves)):
+            wavfile.write(folder + "/" + str(i), 22050, self.normalized_waves[i])
+
 
 
 def normalize_sample_length(sample):
-    sample_length = int((const.SAMPLE_LENGTH_MS/1000)*const.SAMPLING_RATE)
+    sample_length = 16384
     if(sample.shape[0] == sample_length):
         return sample
     if(sample.shape[0] < sample_length):
@@ -60,4 +69,3 @@ def display_spectrum(spectrum, sampling_rate):
     fig.colorbar(img, ax=ax, format='%+2.0f dB')
     ax.set(title='Mel-frequency spectrogram')
     plt.savefig("figure.png")
-

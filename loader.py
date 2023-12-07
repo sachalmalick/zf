@@ -1,8 +1,9 @@
-from IPython.lib.display import Audio
 import re
 import pathlib
 import pandas as pd
 import constants as const
+import librosa as libr
+import numpy as np
 
 class ZFinchDataset():
     def __init__(self, adult_paths):
@@ -28,3 +29,5 @@ def to_example(path):
 
 def load_dataset():
     return ZFinchDataset(const.ADULT_RECORDINGS_PATH)
+
+
