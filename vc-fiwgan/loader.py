@@ -243,6 +243,8 @@ def decode_extract_and_batch(
                         prefetch_size,
                         prefetch_gpu_num)
   dataset = dataset.batch(batch_size, drop_remainder=True)
+  if shuffle:
+    dataset = dataset.shuffle(buffer_size=shuffle_buffer_size)
   # Prefetch a number of batches
   if prefetch_size is not None:
     dataset = dataset.prefetch(prefetch_size)
