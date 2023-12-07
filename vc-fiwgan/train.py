@@ -60,11 +60,11 @@ def train(fps, args):
         qnet = QNet(**args.wavegan_q_kwargs)
 
         #wgan-gp loss
-        g_opt = tf.keras.optimizers.Adam(
+        g_opt = tf.optimizers.Adam(
                 learning_rate=1e-4)
-        d_opt = tf.keras.optimizers.Adam(
+        d_opt = tf.optimizers.Adam(
             learning_rate=1e-4)
-        q_opt = tf.keras.optimizers.Adam(
+        q_opt = tf.optimizers.Adam(
             learning_rate=1e-4)
         
         def discriminator_loss(real, fake):
