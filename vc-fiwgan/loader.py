@@ -243,13 +243,4 @@ def decode_extract_and_batch(
                         prefetch_size,
                         prefetch_gpu_num)
   dataset = dataset.batch(batch_size, drop_remainder=True)
-  if shuffle:
-    dataset = dataset.shuffle(buffer_size=shuffle_buffer_size)
-  # Prefetch a number of batches
-  if prefetch_size is not None:
-    dataset = dataset.prefetch(prefetch_size)
-    if prefetch_gpu_num is not None and prefetch_gpu_num >= 0:
-      dataset = dataset.apply(
-          tf.data.experimental.prefetch_to_device(
-            '/device:GPU:{}'.format(prefetch_gpu_num)))
   return dataset
