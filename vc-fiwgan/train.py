@@ -175,6 +175,7 @@ def train(fps, args):
             manager.save()
 
         def train_loop():
+            step = 0
             for epoch in range(0, args.train_epochs):
                 print("Epoch", epoch)
                 for batch in ds:
