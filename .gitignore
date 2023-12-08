@@ -1,1 +1,5 @@
+vc-fiwgan/__pycache__/
 data/
+vc-fiwgan/train_dir
+proc/
+__pycache__/

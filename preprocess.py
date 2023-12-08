@@ -28,7 +28,7 @@ class ZFinchDataProcessor:
 
 
 def normalize_sample_length(sample):
-    sample_length = 16384
+    sample_length = int((const.SAMPLE_LENGTH_MS/1000)*const.SAMPLING_RATE)
     if(sample.shape[0] == sample_length):
         return sample
     if(sample.shape[0] < sample_length):
