@@ -103,7 +103,7 @@ def train(fps, args):
             #real_waves = real_waves[:, :, 0]
             z = make_z()
 
-            for _ in range(3):
+            for _ in range(2):
                 with tf.GradientTape() as dis_tape:
                     generated_waves = generator(z, training=True)
                     real_output = discriminator(real_waves, training=True)
