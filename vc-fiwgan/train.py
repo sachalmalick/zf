@@ -177,7 +177,6 @@ def train(fps, args):
         def train_loop():
             for epoch in range(0, args.train_epochs):
                 print("Epoch", epoch)
-                step = 0
                 for batch in ds:
                     loss = distributed_train_step(tf.convert_to_tensor(batch))
                     g_loss, d_loss, q_loss = loss
