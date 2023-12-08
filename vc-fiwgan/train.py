@@ -169,7 +169,7 @@ def train(fps, args):
               step=step
             )
 
-          if((epoch % args.train_save_steps) == 0):
+          if((epoch % args.train_save_epochs) == 0):
             save(generated_basis, basis_z, basis_epoch_name, args.data_sample_rate)
             save(generated_checkpoint, checkpoint_z, checkpoint_epoch_name, args.data_sample_rate)
             manager.save()
