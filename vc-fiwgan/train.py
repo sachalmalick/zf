@@ -66,22 +66,19 @@ def train(fps, args):
                                               reduction=tf.keras.losses.Reduction.NONE)
 
         #wgan-gp loss
-        g_opt = tf.optimizers.Adam(
-                learning_rate=1e-4)
-        d_opt = tf.optimizers.Adam(
-            learning_rate=1e-4)
-        q_opt = tf.optimizers.Adam(
-            learning_rate=1e-4)
+        g_opt = tf.keras.optimizers.experimental.RMSprop(
+                learning_rate=5e-5, clipnorm=1.0)
+        d_opt = tf.keras.optimizers.experimental.RMSprop(
+            learning_rate=5e-5, clipnorm=1.0)
+        q_opt = tf.keras.optimizers.experimental.RMSprop(
+            learning_rate=5e-5, clipnorm=1.0)
         
         def discriminator_loss(real, fake):
-            real_loss = cross_entropy(tf.ones_like(real), real)
-            fake_loss = cross_entropy(tf.zeros_like(fake), fake)
-            total_loss = real_loss + fake_loss
-            return tf.reduce_mean(total_loss)
-
+            return tf.reduce_mean(fake) - tf.reduce_mean(real)
+        
         def generator_loss(fake):
-            return -tf.reduce_mean(cross_entropy(tf.zeros_like(fake), fake))
-
+            return -tf.reduce_mean(fake)
+        
         def qnet_loss(z, guessed_z):
             z_q_loss = z[:, : args.num_categ]
             q_q_loss = guessed_z[:, : args.num_categ]
@@ -112,11 +109,11 @@ def train(fps, args):
 
             gen_grd = gen_tape.gradient(g_loss, generator.trainable_variables)
             dis_grd = dis_tape.gradient(d_loss, discriminator.trainable_variables)
-            qnet_grd = qnet_tape.gradient(q_loss, qnet.trainable_variables + generator.trainable_variables)
+            qnet_grd = qnet_tape.gradient(q_loss, qnet.trainable_variables)
 
             g_opt.apply_gradients(zip(gen_grd, generator.trainable_variables))
             d_opt.apply_gradients(zip(dis_grd, discriminator.trainable_variables))
-            q_opt.apply_gradients(zip(qnet_grd, qnet.trainable_variables + generator.trainable_variables))
+            q_opt.apply_gradients(zip(qnet_grd, qnet.trainable_variables))
 
             return (g_loss, d_loss, q_loss)
         
@@ -165,7 +162,6 @@ def train(fps, args):
               step=step
             )
 
-          if((epoch % args.train_save_epochs) == 0):
             save(generated_basis, basis_z, basis_epoch_name, args.data_sample_rate)
             save(generated_checkpoint, checkpoint_z, checkpoint_epoch_name, args.data_sample_rate)
             manager.save()
@@ -188,6 +184,8 @@ def train(fps, args):
                     step+=1
                 if((epoch % args.train_summary_epochs) == 0):
                   save_and_summarize(generator, step, epoch)
+                  batch = decode_audio(batch)
+                  save(batch, basis_z, "batch_{}".format(epoch), args.data_sample_rate)
         print('Training has started. Please use \'tensorboard --logdir={}\' to monitor.'.format(args.train_dir))
         train_loop()
 
@@ -205,6 +203,12 @@ def sample_from_batch(batch, num_samples):
   selected_slices = tf.gather(batch, random_indices)
   return selected_slices
 
+def decode_audio(audio):
+  output = audio
+  output = output * 32767
+  output = tf.clip_by_value(output, -32767., 32767.)
+  output = tf.cast(output, tf.int16)
+  return output
 
 """
   Generates a preview audio file every time a checkpoint is saved
