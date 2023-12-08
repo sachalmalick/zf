@@ -79,19 +79,6 @@ def train(fps, args):
         q_opt = tf.keras.optimizers.RMSprop(
             learning_rate=1e-4)
         
-        def wgan_gp_loss(g_z, real_waves):
-            alpha = tf.random.uniform(shape=[args.train_batch_size, 1, 1], minval=0., maxval=1.)
-            differences = g_z - real_waves
-            interpolates = real_waves + (alpha * differences)
-            d_interp = discriminator(interpolates)
-
-            LAMBDA = 10
-            gradients = tf.gradients(d_interp, [interpolates])[0]
-            slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), axis=[1, 2]))
-            gradient_penalty = tf.reduce_mean((slopes - 1.) ** 2.)
-            return LAMBDA * gradient_penalty
-
-
         def discriminator_loss(real, fake):
             return tf.reduce_mean(fake) - tf.reduce_mean(real)
         
@@ -121,11 +108,22 @@ def train(fps, args):
             z = make_z()
             for _ in range(discriminator_steps):
                 with tf.GradientTape() as dis_tape:
-                    generated_waves = generator(z, training=True)
-                    real_output = discriminator(real_waves, training=True)
-                    fake_output = discriminator(generated_waves, training=True)
+                    with tf.GradientTape() as gp_tape:
+                        generated_waves = generator(z, training=True)
+                        real_output = discriminator(real_waves, training=True)
+                        fake_output = discriminator(generated_waves, training=True)
+                        alpha = tf.random.uniform(shape=[args.train_batch_size, 1, 1], minval=0., maxval=1.)
+                        differences = generated_waves - real_waves
+                        interpolates = real_waves + (alpha * differences)
+                        d_interp = discriminator(interpolates)
+
+                    LAMBDA = 10
+                    gradients = gp_tape.gradient(d_interp, [interpolates])[0]
+                    grad_norms = tf.sqrt(tf.reduce_sum(tf.square(gradients), axis=[1, 2]))
+                    gradient_penalty = LAMBDA * tf.reduce_mean(tf.square(grad_norms - 1))
+                    
                     d_loss = discriminator_loss(real_output, fake_output)
-                    d_loss += wgan_gp_loss(generated_waves, real_waves)
+                    d_loss += gradient_penalty
             # Calculate and apply gradients only for the discriminator
             dis_grd = dis_tape.gradient(d_loss, discriminator.trainable_variables)
             d_opt.apply_gradients(zip(dis_grd, discriminator.trainable_variables))
