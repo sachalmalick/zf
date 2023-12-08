@@ -71,7 +71,7 @@ def train(fps, args):
         d_opt = tf.keras.optimizers.experimental.RMSprop(
             learning_rate=5e-5, clipnorm=1.0)
         q_opt = tf.keras.optimizers.experimental.RMSprop(
-            learning_rate=5e-5, clipnorm=1.0)
+            learning_rate=5e-5)
         
         def discriminator_loss(real, fake):
             return tf.reduce_mean(fake) - tf.reduce_mean(real)
@@ -109,11 +109,11 @@ def train(fps, args):
 
             gen_grd = gen_tape.gradient(g_loss, generator.trainable_variables)
             dis_grd = dis_tape.gradient(d_loss, discriminator.trainable_variables)
-            qnet_grd = qnet_tape.gradient(q_loss, qnet.trainable_variables)
+            qnet_grd = qnet_tape.gradient(q_loss, [qnet.trainable_variables, generator.trainable_variables])
 
             g_opt.apply_gradients(zip(gen_grd, generator.trainable_variables))
             d_opt.apply_gradients(zip(dis_grd, discriminator.trainable_variables))
-            q_opt.apply_gradients(zip(qnet_grd, qnet.trainable_variables))
+            q_opt.apply_gradients(zip(qnet_grd, [qnet.trainable_variables, generator.trainable_variables]))
 
             return (g_loss, d_loss, q_loss)
         
