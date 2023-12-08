@@ -115,43 +115,17 @@ def decode_extract(
       audio: [batch_size, slice_len, 1, nch]
   """
   # Create dataset of filepaths
-  dataset = tf.data.Dataset.from_tensor_slices(fps)
+  audio_data = []
+  for file in fps:
+    audio = decode_audio(file,
+                        fs=decode_fs,
+                        num_channels=decode_num_channels,
+                        normalize=decode_normalize,
+                        fast_wav=decode_fast_wav)
+    audio.reshape((audio.shape[0], 1, 1))
+    audio_data.append(audio)
 
-  # Shuffle all filepaths every epoch
-  if shuffle:
-    dataset = dataset.shuffle(buffer_size=len(fps))
-
-  # Repeat
-  if repeat:
-    dataset = dataset.repeat()
-
-  def _decode_audio_shaped(fp):
-    def _decode_audio_closure(_fp):
-        # Convert the tensor _fp to a numpy array and then to a string
-        _fp = _fp.numpy().decode('utf-8')
-        print("decoding audio")
-        return decode_audio(
-            _fp,
-            fs=decode_fs,
-            num_channels=decode_num_channels,
-            normalize=decode_normalize,
-            fast_wav=decode_fast_wav)
-
-    audio = tf.py_function(
-        _decode_audio_closure,
-        [fp],
-        tf.float32)
-    audio.set_shape([None, 1, decode_num_channels])
-
-    return audio
-
-  # Decode audio
-  dataset = dataset.map(
-      _decode_audio_shaped,
-      num_parallel_calls=decode_parallel_calls)
-
-  # Parallel
-  def _slice(audio):
+  def slice(audio):
     # Calculate hop size
     if slice_overlap_ratio < 0:
       raise ValueError('Overlap ratio must be greater than 0')
@@ -176,17 +150,14 @@ def decode_extract(
     # Only use first slice if requested
     if slice_first_only:
       audio_slices = audio_slices[:1]
-
     return audio_slices
-
-  def _slice_dataset_wrapper(audio):
-    audio_slices = _slice(audio)
-    return tf.data.Dataset.from_tensor_slices(audio_slices)
-
-  # Extract parallel sliceuences from both audio and features
-  dataset = dataset.flat_map(_slice_dataset_wrapper)
   
-  return dataset
+  final_set = []
+  for audio in audio_data:
+    for i in slice(audio):
+      final_set.append(tf.squeeze(i, axis=[-1]))
+  print(len(final_set))
+  return final_set
 
 def decode_extract_and_batch(
     fps,

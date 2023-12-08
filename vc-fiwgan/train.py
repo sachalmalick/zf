@@ -18,6 +18,7 @@ import time
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+import tensorflow_datasets as tfds
 
 from six.moves import xrange
 
@@ -35,7 +36,7 @@ def train(fps, args):
     strategy = tf.distribute.MirroredStrategy()
     print('Number of devices:, mirrored strategy {}'.format(strategy.num_replicas_in_sync))
     with strategy.scope():            #loads input waveforns in filepaths
-        x = loader.decode_extract_and_batch(
+        x = loader.decode_extract(
             fps,
             batch_size=args.train_batch_size,
             slice_len=args.data_slice_len,
@@ -53,8 +54,8 @@ def train(fps, args):
             prefetch_size=args.train_batch_size * 4,
             prefetch_gpu_num=args.data_prefetch_gpu_num)
         
-        audio_data = loader.load_data_trf("../proc")
-        print(audio_data.shape)
+        # audio_data = loader.load_data_trf("../proc")
+        # print(audio_data.shape)
         
 
         # Make z vector
@@ -80,7 +81,7 @@ def train(fps, args):
             return tf.reduce_mean(total_loss)
 
         def generator_loss(fake):
-            return tf.reduce_mean(cross_entropy(tf.ones_like(fake), fake))
+            return -tf.reduce_mean(cross_entropy(tf.zeros_like(fake), fake))
 
         def qnet_loss(z, guessed_z):
             z_q_loss = z[:, : args.num_categ]
@@ -105,7 +106,7 @@ def train(fps, args):
                 real_output = discriminator(real_waves, training=True)
                 fake_output = discriminator(generated_waves, training=True)
                 z_guess = qnet(generated_waves, training=True)
-
+                print(generated_waves[0, 300:350, 0])
                 d_loss = discriminator_loss(real_output, fake_output)
                 g_loss = generator_loss(fake_output)
                 q_loss = qnet_loss(z, z_guess)
@@ -139,9 +140,9 @@ def train(fps, args):
         print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
 
         #distributed the dataset
-        x = strategy.experimental_distribute_dataset(x)
+        #x = strategy.experimental_distribute_dataset(x)
         writer = tf.summary.create_file_writer(args.train_dir)
-        ds = tf.data.Dataset.from_tensor_slices((audio_data))
+        ds = tf.data.Dataset.from_tensor_slices(x)
         ds = ds.batch(args.train_batch_size, drop_remainder=True)
 
         def save_and_summarize(generator, step, epoch):
