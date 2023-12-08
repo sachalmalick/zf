@@ -210,7 +210,6 @@ def train(fps, args):
 
 def generate_audio(z, generator):
   output = generator(z, training=False)
-  output = output * 32767
   output = tf.clip_by_value(output, -32767., 32767.)
   return output
 
@@ -351,7 +350,7 @@ if __name__ == '__main__':
     wavegan_genr_pp_len=512,
     wavegan_disc_phaseshuffle=2,
     train_batch_size=64,
-    train_save_epochs=100,
+    train_save_epochs=5,
     train_summary_epochs=5,
     train_summary_steps=10,
     train_epochs = 5000,
