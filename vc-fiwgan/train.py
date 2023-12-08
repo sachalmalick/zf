@@ -74,13 +74,17 @@ def train(fps, args):
             learning_rate=1e-4)
         
         def discriminator_loss(real, fake):
-            real_loss = cross_entropy(tf.ones_like(real), real)
-            fake_loss = cross_entropy(tf.zeros_like(fake), fake)
+            fake_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.zeros_like(fake), logits=fake)
+            real_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(real), logits=real)
             total_loss = real_loss + fake_loss
             return tf.reduce_mean(total_loss)
 
         def generator_loss(fake):
-            return tf.reduce_mean(cross_entropy(tf.ones_like(fake), fake))
+            #the cross entropy loss of the descriminators prediction with labels being what we know are the true values
+            #if this loss is high then the descriminator did a bad job of predicting, which means the
+            #generator was successful, so we will negate this loss.
+            loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.zeros_like(fake), logits=fake)
+            return -tf.reduce_mean(loss)
 
         def qnet_loss(z, guessed_z):
             z_q_loss = z[:, : args.num_categ]
@@ -97,8 +101,19 @@ def train(fps, args):
 
         def train_step(real_waves):
             #real_waves = real_waves[:, :, 0]
-            print("single batch shape", real_waves.shape)
             z = make_z()
+
+            for _ in range(3):
+                with tf.GradientTape() as dis_tape:
+                    generated_waves = generator(z, training=True)
+                    real_output = discriminator(real_waves, training=True)
+                    fake_output = discriminator(generated_waves, training=True)
+                    d_loss = discriminator_loss(real_output, fake_output)
+
+                # Calculate and apply gradients only for the discriminator
+                dis_grd = dis_tape.gradient(d_loss, discriminator.trainable_variables)
+                d_opt.apply_gradients(zip(dis_grd, discriminator.trainable_variables))
+
             with tf.GradientTape() as gen_tape, tf.GradientTape() as dis_tape, tf.GradientTape() as qnet_tape:
                 generated_waves = generator(z, training=True)
                 print(generated_waves.shape)
@@ -110,17 +125,13 @@ def train(fps, args):
                 g_loss = generator_loss(fake_output)
                 q_loss = qnet_loss(z, z_guess)
 
-                # tf.summary.scalar('G_loss', g_loss)
-                # tf.summary.scalar('D_loss', d_loss)
-                # tf.summary.scalar('Q_loss', q_loss)
-
             gen_grd = gen_tape.gradient(g_loss, generator.trainable_variables)
             dis_grd = dis_tape.gradient(d_loss, discriminator.trainable_variables)
-            qnet_grd = qnet_tape.gradient(q_loss, qnet.trainable_variables)
+            qnet_grd = qnet_tape.gradient(q_loss, qnet.trainable_variables + generator.trainable_variables)
 
             g_opt.apply_gradients(zip(gen_grd, generator.trainable_variables))
             d_opt.apply_gradients(zip(dis_grd, discriminator.trainable_variables))
-            q_opt.apply_gradients(zip(qnet_grd, qnet.trainable_variables))
+            q_opt.apply_gradients(zip(qnet_grd, qnet.trainable_variables + generator.trainable_variables))
 
             return (g_loss, d_loss, q_loss)
         
