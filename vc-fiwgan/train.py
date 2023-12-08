@@ -18,7 +18,6 @@ import time
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-import tensorflow_datasets as tfds
 
 from six.moves import xrange
 
