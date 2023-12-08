@@ -154,13 +154,13 @@ def train(fps, args):
           with writer.as_default():
             tf.summary.audio(
               basis_epoch_name,
-              generated_basis,
+              tf.cast(generated_basis, tf.float32),
               args.data_sample_rate,
               step=step
             )
             tf.summary.audio(
               checkpoint_epoch_name,
-              generated_checkpoint,
+              tf.cast(generated_checkpoint, tf.float32),
               args.data_sample_rate,
               step=step
             )
@@ -197,6 +197,7 @@ def generate_audio(z, generator):
   output = generator(z, training=False)
   output = output * 32767
   output = tf.clip_by_value(output, -32767., 32767.)
+  output = tf.cast(output, tf.int16)
   return output
 
 def sample_from_batch(batch, num_samples):
