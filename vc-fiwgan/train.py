@@ -66,13 +66,32 @@ def train(fps, args):
                                               reduction=tf.keras.losses.Reduction.NONE)
 
         #wgan-gp loss
-        g_opt = tf.keras.optimizers.RMSprop(
-                learning_rate=5e-5, clipnorm=1.0)
-        d_opt = tf.keras.optimizers.RMSprop(
-            learning_rate=5e-5, clipnorm=1.0)
-        q_opt = tf.keras.optimizers.RMSprop(
-            learning_rate=5e-5)
+        g_opt = tf.keras.optimizers.Adam(
+                      learning_rate=1e-4,
+                      beta_1=0.5,
+                      beta_2=0.9)
+
+        d_opt = tf.keras.optimizers.Adam(
+                      learning_rate=1e-4,
+                      beta_1=0.5,
+                      beta_2=0.9)
         
+        q_opt = tf.keras.optimizers.RMSprop(
+            learning_rate=1e-4)
+        
+        def wgan_gp_loss(g_z, real_waves):
+            alpha = tf.random.uniform(shape=[args.train_batch_size, 1, 1], minval=0., maxval=1.)
+            differences = g_z - real_waves
+            interpolates = real_waves + (alpha * differences)
+            d_interp = discriminator(interpolates)
+
+            LAMBDA = 10
+            gradients = tf.gradients(d_interp, [interpolates])[0]
+            slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), axis=[1, 2]))
+            gradient_penalty = tf.reduce_mean((slopes - 1.) ** 2.)
+            return LAMBDA * gradient_penalty
+
+
         def discriminator_loss(real, fake):
             return tf.reduce_mean(fake) - tf.reduce_mean(real)
         
@@ -92,27 +111,38 @@ def train(fps, args):
         
         basis_z = make_z()
 
+
         def train_step(real_waves):
             #real_waves = real_waves[:, :, 0]
             print("single batch shape", real_waves.shape)
             z = make_z()
-            with tf.GradientTape() as gen_tape, tf.GradientTape() as dis_tape, tf.GradientTape() as qnet_tape:
+            discriminator_steps = 5
+
+            z = make_z()
+            for _ in range(discriminator_steps):
+                with tf.GradientTape() as dis_tape:
+                    generated_waves = generator(z, training=True)
+                    real_output = discriminator(real_waves, training=True)
+                    fake_output = discriminator(generated_waves, training=True)
+                    d_loss = discriminator_loss(real_output, fake_output)
+                    d_loss += wgan_gp_loss(generated_waves, real_waves)
+            # Calculate and apply gradients only for the discriminator
+            dis_grd = dis_tape.gradient(d_loss, discriminator.trainable_variables)
+            d_opt.apply_gradients(zip(dis_grd, discriminator.trainable_variables))
+
+            with tf.GradientTape() as gen_tape, tf.GradientTape() as qnet_tape:
                 generated_waves = generator(z, training=True)
                 print(generated_waves.shape)
-                real_output = discriminator(real_waves, training=True)
                 fake_output = discriminator(generated_waves, training=True)
                 z_guess = qnet(generated_waves, training=True)
-                print(generated_waves[0, 300:350, 0])
-                d_loss = discriminator_loss(real_output, fake_output)
+                
                 g_loss = generator_loss(fake_output)
                 q_loss = qnet_loss(z, z_guess)
 
             gen_grd = gen_tape.gradient(g_loss, generator.trainable_variables)
-            dis_grd = dis_tape.gradient(d_loss, discriminator.trainable_variables)
             qnet_grd = qnet_tape.gradient(q_loss, qnet.trainable_variables + generator.trainable_variables)
 
             g_opt.apply_gradients(zip(gen_grd, generator.trainable_variables))
-            d_opt.apply_gradients(zip(dis_grd, discriminator.trainable_variables))
             q_opt.apply_gradients(zip(qnet_grd, qnet.trainable_variables + generator.trainable_variables))
 
             return (g_loss, d_loss, q_loss)
