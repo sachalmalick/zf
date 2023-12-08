@@ -53,7 +53,7 @@ def train(fps, args):
             prefetch_size=args.train_batch_size * 4,
             prefetch_gpu_num=args.data_prefetch_gpu_num)
         
-        # audio_data = loader.load_data_trf("../proc")
+        audio_data = loader.load_data_trf("../proc")
         # print(audio_data.shape)
         
 
@@ -138,7 +138,7 @@ def train(fps, args):
         #distributed the dataset
         #x = strategy.experimental_distribute_dataset(x)
         writer = tf.summary.create_file_writer(args.train_dir)
-        ds = tf.data.Dataset.from_tensor_slices(x)
+        ds = tf.data.Dataset.from_tensor_slices(audio_data)
         ds = ds.batch(args.train_batch_size, drop_remainder=True)
 
         def save_and_summarize(generator, step, epoch):
