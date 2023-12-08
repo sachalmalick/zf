@@ -82,7 +82,7 @@ class Descriminator(tf.keras.Model):
         output = self.conv5(output)
         if self.use_batchnorm:
             output = self.bn4(output, training=training)
-        output = lrelu(output)
+        output = tf.keras.activations.sigmoid(output)
 
         # Flatten
         output = tf.reshape(output, [batch_size, -1])
