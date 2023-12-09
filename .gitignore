@@ -3,3 +3,5 @@ data/
 vc-fiwgan/train_dir
 proc/
 __pycache__/
+checkpoints/
+orig_gan/

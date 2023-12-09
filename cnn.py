@@ -170,3 +170,8 @@ def train_and_evaluate(data_processor):
     print(f'Accuracy: {acc:.2f}, Total items: {total_predicted}')
     torch.save(model.state_dict(), "model_state.txt")
 
+def load_model():
+    model = ZFinchCNN()
+    model.load_state_dict(torch.load("model_state.txt"))
+    return model
+

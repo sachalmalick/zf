@@ -1,0 +1,65 @@
+logistic regression
+
+{'accuracy_score': 0.7030612244897959, 'cross_validation_score': array([0.69292929, 0.6969697 , 0.7239636 ]), 'model': LogisticRegression(max_iter=8000, random_state=0)}
+
+
+
+Running lda
+[[-0.71470891 -0.31290274 -0.69151053 -0.50333412 -0.89033125]
+ [ 0.58319035  1.24005901 -0.05638559  0.53760896  1.20242399]
+ [-1.47716178 -1.33771191 -1.66310386 -1.6781457  -0.89033125]
+ ...
+ [-1.23221226 -1.20942258 -0.97584798 -0.93148255 -0.89033125]
+ [ 2.57636188  0.1472289   1.41248666  0.83650503  0.43508041]
+ [ 0.46779615 -0.44970714 -0.10126583 -0.38735321 -0.89033125]]
+lda scores {'accuracy_score': 0.6408163265306123, 'cross_validation_score': array([0.65959596, 0.64444444, 0.68149646]), 'model': LinearDiscriminantAnalysis()}
+Running logistic regression
+[[-0.71470891 -0.31290274 -0.69151053 -0.50333412 -0.89033125]
+ [ 0.58319035  1.24005901 -0.05638559  0.53760896  1.20242399]
+ [-1.47716178 -1.33771191 -1.66310386 -1.6781457  -0.89033125]
+ ...
+ [-1.23221226 -1.20942258 -0.97584798 -0.93148255 -0.89033125]
+ [ 2.57636188  0.1472289   1.41248666  0.83650503  0.43508041]
+ [ 0.46779615 -0.44970714 -0.10126583 -0.38735321 -0.89033125]]
+logistic scores {'accuracy_score': 0.7030612244897959, 'cross_validation_score': array([0.69292929, 0.6969697 , 0.7239636 ]), 'model': LogisticRegression(max_iter=8000, random_state=0)}
+Running random forrest
+2023-12-08 22:53:31.704 Python[95889:2997773] +[CATransaction synchronize] called within transaction
+random forrest scores {'accuracy_score': 0.8387755102040816, 'cross_validation_score': array([0.71010101, 0.67676768, 0.76238625]), 'model': RandomForestClassifier(max_depth=10, min_samples_split=10, n_estimators=24,
+                       random_state=0)}
+
+Testing feature  0
+
+Logistic regression
+Baseline
+logistic accuracy 0.012462108454024925
+lda accuracy 0.037723139104075445
+random forrest accuracy 0.46311889525092625
+Testing feature  1
+
+Logistic regression
+Baseline
+logistic accuracy 0.03536544291007073
+lda accuracy 0.0434489727180869
+random forrest accuracy 0.2300437857864601
+Testing feature  2
+
+Logistic regression
+Baseline
+logistic accuracy 0.033007746716066017
+lda accuracy 0.04210171775008421
+random forrest accuracy 0.14954530144829908
+Testing feature  3
+
+Logistic regression
+Baseline
+logistic accuracy 0.02694509936005389
+lda accuracy 0.026608285618053215
+random forrest accuracy 0.16268103738632536
+Testing feature  4
+
+Logistic regression
+Baseline
+logistic accuracy 0.02256652071404513
+lda accuracy 0.02862916807005726
+random forrest accuracy 0.11316941731222634
+Training CNN!

@@ -88,13 +88,19 @@ def train(fps, args):
         def qnet_loss(z, guessed_z):
             z_q_loss = z[:, : args.num_categ]
             q_q_loss = guessed_z[:, : args.num_categ]
-            q_sigmoid = tf.nn.sigmoid_cross_entropy_with_logits(labels=z_q_loss, logits=q_q_loss)
+            q_sigmoid = tf.nn.softmax_cross_entropy_with_logits(labels=z_q_loss, logits=q_q_loss)
             return tf.reduce_mean(q_sigmoid)
 
         def make_z():
-            categ = categ = tfp.distributions.Bernoulli(probs=0.5, dtype=tf.float32).sample(sample_shape=(args.train_batch_size, args.num_categ))
-            uniform = tf.random.uniform([args.train_batch_size,args.wavegan_latent_dim-args.num_categ],-1.,1.)
-            return tf.concat([categ,uniform],1)
+            def random_c():
+                idxs = np.random.randint(args.num_categ, size=args.train_batch_size)
+                c = np.zeros((args.train_batch_size, args.num_categ))
+                c[np.arange(args.train_batch_size), idxs] = 1
+                return c
+            rz = np.zeros([args.train_batch_size, args.wavegan_latent_dim])
+            rz[:, : args.num_categ] = random_c()
+            rz[:, args.num_categ : ] = np.random.uniform(-1., 1., size=(args.train_batch_size, args.wavegan_latent_dim - args.num_categ))        
+            return rz
         
         basis_z = make_z()
 
@@ -203,6 +209,9 @@ def train(fps, args):
                     g_loss, d_loss, q_loss = loss
                     print("step", step, "g loss ", g_loss.numpy(),
                         "d loss ", d_loss.numpy(), "q loss ", q_loss.numpy())
+                    generated_basis = generator(basis_z, training=False)
+                    print("gen", generated_basis[0][8000:8010])
+                    print("batch", batch[0][8000:8010])
                     if((step % args.train_summary_steps) == 0):
                       with writer.as_default():
                           tf.summary.scalar('Generator Loss', g_loss, step=step)
