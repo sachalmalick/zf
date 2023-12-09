@@ -34,28 +34,8 @@ from qnet import QNet
 def train(fps, args):
     strategy = tf.distribute.MirroredStrategy()
     print('Number of devices:, mirrored strategy {}'.format(strategy.num_replicas_in_sync))
-    with strategy.scope():            #loads input waveforns in filepaths
-        x = loader.decode_extract(
-            fps,
-            batch_size=args.train_batch_size,
-            slice_len=args.data_slice_len,
-            decode_fs=args.data_sample_rate,
-            decode_num_channels=args.data_num_channels,
-            decode_fast_wav=args.data_fast_wav,
-            decode_parallel_calls=4,
-            slice_randomize_offset=False if args.data_first_slice else True,
-            slice_first_only=args.data_first_slice,
-            slice_overlap_ratio=0. if args.data_first_slice else args.data_overlap_ratio,
-            slice_pad_end=True if args.data_first_slice else args.data_pad_end,
-            repeat=True,
-            shuffle=True,
-            shuffle_buffer_size=4096,
-            prefetch_size=args.train_batch_size * 4,
-            prefetch_gpu_num=args.data_prefetch_gpu_num)
-        
+    with strategy.scope():
         audio_data = loader.load_data_trf("../proc")
-        # print(audio_data.shape)
-        
 
         # Make z vector
         generator = Generator(**args.wavegan_g_kwargs)
