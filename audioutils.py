@@ -22,7 +22,6 @@ def get_spectral_feature_means(y, sr):
         ]
     )
 
-
 def create_mel_spectrogram(normalized_wave, sampling_rate):
     spectrum = libr.feature.melspectrogram(y=normalized_wave, sr=sampling_rate)
     spectrum_decibals = libr.power_to_db(spectrum, ref=np.max)

@@ -5,3 +5,4 @@ proc/
 __pycache__/
 checkpoints/
 orig_gan/
+.DS_STORE/
