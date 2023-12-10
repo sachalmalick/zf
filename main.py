@@ -6,6 +6,24 @@ import numpy as np
 import classic_ml as cml
 from sklearn.metrics import accuracy_score
 import util
+from joblib import dump, load
+
+def train_and_save_classifiers(x, y):
+    print("Running lda")
+    scores = cml.lda(x, y)
+    lda = scores["model"]
+    dump(lda, 'lda.joblib') 
+
+    print("Running logistic regression")
+    scores = cml.logistic_regression(x, y)
+    logistic = scores["model"]
+    dump(logistic, 'logistic.joblib') 
+
+    print("Running random forrest")
+    scores = cml.random_forest(x, y)
+    random_c = scores["model"]
+    dump(random_c, 'random_c.joblib') 
+
 
 def effect_of_randomization_on_classification(x, y, logistic, lda, random_c, cnn_model):
     for i in range(0, x.shape[1]):
@@ -35,6 +53,7 @@ def effect_of_randomization_on_classification(x, y, logistic, lda, random_c, cnn
 
 def experiment(dataset):
     x, y = dataset.get_spectral_feature_matrix()
+    train_and_save_classifiers(x, y)
     waves = dataset.normalized_waves
 
     print("Loading CNN")
