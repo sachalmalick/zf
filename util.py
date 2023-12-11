@@ -1,5 +1,6 @@
 import constants as const
 import numpy as np
+import pickle
 
 def get_call_id(example):
     for k in const.CALL_MAP:
@@ -14,3 +15,8 @@ def randomize_feature(x, i):
     random_numbers = random_numbers + minv
     x[:,i] = random_numbers
     return x
+
+def save_obj(obj, fn):
+    with open(fn + '.pkl', 'wb') as f:
+        pickle.dump(obj, f)
+    

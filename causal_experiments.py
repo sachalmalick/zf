@@ -10,6 +10,7 @@ from joblib import dump, load
 import preprocess as proc
 import constants
 import torch
+import util
 
 GENERATED_WAVES_DIR = "generated_waves"
 
@@ -17,7 +18,60 @@ DOSE_PATTERN = r'^gz_(\w+)-(\d+)__dose_(-?\d+)_(\d+)\.wav$'
 BASE_PATTERN = r'^gz_(\w+)-(\d+)__(\d+)\.wav$'
 
 
-
+def compare_class_predictive_qualities():
+    predictions = load("predictions_on_generators.pkl")
+    #we want to see if the classes are the same for
+    # the same latent codes with no doses
+    latent_correlations = {}
+    latent_totals = {}
+    features_correlations = {}
+    features_totals = {}
+    #print([(filename, int(predictions[filename]["ramdom_c_pred"][0])) for filename in predictions])
+    for filename in predictions:
+        #for model in predictions[filename]:
+        call_id = int(predictions[filename]["logistic_pred"][0])
+        call_id_name = constants.CALL_NAMES[call_id]
+        if("dose" in filename):
+            match = re.match(DOSE_PATTERN, filename)
+            latent, features, dose, sample_num = match.groups()
+        else:
+            if(latent in latent_correlations):
+                latent_totals[latent]+=1
+                if(call_id_name in latent_correlations[latent]):
+                    latent_correlations[latent][call_id_name]+=1
+                else:
+                    latent_correlations[latent][call_id_name] = 1
+            else:
+                latent_correlations[latent] = {call_id_name : 1}
+                latent_totals[latent] = 1
+            if(features in features_correlations):
+                features_totals[features] +=1
+                if(call_id_name in features_correlations[features]):
+                    features_correlations[features][call_id_name]+=1
+                else:
+                    features_correlations[features][call_id_name] = 1
+            else:
+                features_correlations[features] = {call_id_name : 1}
+                features_totals[features] = 1
+    distributions_of_id_given_features = {}
+    for features in features_correlations:
+        totals = features_totals[features]
+        distributions_of_id_given_features[features] = {}
+        for call_id_name in features_correlations[features]:
+            call_id_freq = features_correlations[features][call_id_name]
+            prob = call_id_freq / totals
+            distributions_of_id_given_features[features][call_id_freq] = prob
+            print(features, call_id_name, prob)
+    #dump("p_call_type_given_x", distributions_of_id_given_features)
+    distributions_of_id_given_latents= {}
+    for latents in latent_correlations:
+        totals = latent_totals[latents]
+        distributions_of_id_given_latents[latents] = {}
+        for call_id_name in latent_correlations[latents]:
+            call_id_freq = latent_correlations[latents][call_id_name]
+            prob = call_id_freq / totals
+            distributions_of_id_given_latents[latents][call_id_freq] = prob
+            print(latent, call_id_name, prob)
 def load_data():
     filepaths = list(pathlib.Path(GENERATED_WAVES_DIR).iterdir())
     wave_data = []
@@ -112,13 +166,15 @@ def compare_classifiers(data_set):
     for example in data_set:
         normalized = proc.normalize_sample_length(example.wave)
         spectogram = audio.create_mel_spectrogram(normalized, constants.SAMPLING_RATE)
-        if(example.latent == 'lat1'):
-            audio.display_spectrum(spectogram, example.sr)
+        if(example.latent == 'lat2'):
+            audio.display_spectrum(spectogram, example.sr, name=example.path.name + '_lat2cnn.png')
         cnn_pred = cnn_model(torch.tensor(np.array([[spectogram]])))
         _, cnn_pred = torch.max(cnn_pred,1)
         spectral_features = np.reshape(example.spectral_features, (1, -1))
         lda_pred = lda.predict(spectral_features)
         ramdom_c_pred = ramdom_c.predict(spectral_features)
+        # log_features = audio.get_mel_coeffs(normalized, constants.SAMPLING_RATE)
+        # log_features = np.reshape(log_features, (1, -1))
         logistic_pred = logistic.predict(spectral_features)
         predictions[example.path.name] = {
             "cnn" : cnn_pred, 
@@ -127,6 +183,7 @@ def compare_classifiers(data_set):
             "logistic_pred" : logistic_pred, 
         }
     print(predictions)
+    util.save_obj(predictions, "predictions_on_generators")
     return predictions
 
 def impact_of_dose_on_audio_features(data_set):
@@ -172,6 +229,8 @@ def experiment():
     data_set = load_data()
     #results = impact_of_dose_on_audio_features(data_set)
     compare_classifiers(data_set)
+
+    compare_class_predictive_qualities()
 #here is what I want to do:
 
 '''

@@ -24,12 +24,20 @@ class ZFinchDataProcessor:
         print(x.shape)
         for i in range(0, len(self.normalized_waves)):
             wavfile.write(folder + "/" + str(i), 22050, self.normalized_waves[i])
-    def get_spectral_feature_matrix(self):
+    def get_full_spectral_feature_matrix(self):
         print(self.audio_data[0][1])
         x = np.array([audio.get_spectral_feature_means(normalize_sample_length(i[0]), 22050) for i in self.audio_data])
         y = self.class_ids
         return x, y
-
+    def get_spectral_feature_matrix(self, j):
+        print(self.audio_data[0][1])
+        x = np.array([audio.get_spectral_features(normalize_sample_length(i[0]), 22050)[j] for i in self.audio_data])
+        y = self.class_ids
+        return x, y
+    def get_mel_coefficients_matrix(self):
+        x = np.array([audio.get_mel_coeffs(normalize_sample_length(i[0]), 22050) for i in self.audio_data])
+        y = self.class_ids
+        return x, y
 
 def normalize_sample_length(sample):
     sample_length = int((const.SAMPLE_LENGTH_MS/1000)*const.SAMPLING_RATE)

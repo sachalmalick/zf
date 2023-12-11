@@ -5,6 +5,7 @@ from torch.nn import init
 import torch.nn as nn
 import torch
 import constants as const
+import pickle
 
 class ZFinchCNN (nn.Module):
     def __init__(self):
@@ -77,6 +78,7 @@ class ZFinchCNN (nn.Module):
                                                     anneal_strategy='linear')
 
         # Repeat for each epoch
+        loss_tracker = []
         for epoch in range(const.TRAINING_EPOCHS):
             running_loss = 0.0
             correct_prediction = 0
@@ -113,21 +115,23 @@ class ZFinchCNN (nn.Module):
 
                 if i % 10 == 0:    # print every 10 mini-batches
                    print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 10))
-
+                   loss_tracker.append((epoch, i , running_loss / 10))
             # Print stats at the end of the epoch
             num_batches = len(train_dl)
             avg_loss = running_loss / num_batches
             acc = correct_prediction/total_prediction
             print(f'Epoch: {epoch}, Loss: {avg_loss:.2f}, Accuracy: {acc:.2f}')
-
-            print('Finished Training')
-
+        print('Finished Training')
+        with open('cnn_loss.pkl', 'wb') as f:
+            pickle.dump(loss_tracker, f)
+        return loss_tracker
+        
 def setup_and_train_model(data_processor):
     model = ZFinchCNN()
     dataset = ZFinchTorchset(data_processor)
 
     num_items = len(dataset)
-    num_train = round(num_items * 0.8)
+    num_train = round(num_items * 0.60)
     num_val = num_items - num_train
     train_ds, val_ds = random_split(dataset, [num_train, num_val])
 
@@ -174,4 +178,3 @@ def load_model():
     model = ZFinchCNN()
     model.load_state_dict(torch.load("model_state.txt"))
     return model
-

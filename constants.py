@@ -2,7 +2,7 @@ ADULT_RECORDINGS_PATH = "data/data/"
 FILE_NAME_PATTERN = "(.*)_(.*)[-_](.*)-(.*)\.wav"
 SAMPLING_RATE = 22050
 SAMPLE_LENGTH_MS = 300
-TRAINING_EPOCHS = 1000
+TRAINING_EPOCHS = 80
 
 CALL_MAP = {
     'Ag' : ['Ag', 'AggC'],
@@ -29,3 +29,5 @@ CALL_IDS = {
     'Th' : 8,
     'Wh' : 9
 }
+
+CALL_NAMES = ['Ag','Be','DC','Di','LT','Ne','So','Te','Th','Wh']
